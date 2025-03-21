@@ -18,4 +18,4 @@ struct Series: Codable, Identifiable {
     let booksCount: Int
 }
 
-// Hello Djibril ! :)
+// Hello Max! :)
