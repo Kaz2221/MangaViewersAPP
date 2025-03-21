@@ -11,7 +11,7 @@ import SwiftUI
 struct MangaViewerAppApp: App {
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            MainTabView() // Pour test uniquement
         }
     }
 }
