@@ -14,7 +14,7 @@ struct MainTabView: View {
                 .tag(0)
             
             // Onglet Recherche
-            Text("Search - À implémenter")
+            SearchView()
                 .tabItem {
                     Label("Recherche", systemImage: "magnifyingglass")
                 }
