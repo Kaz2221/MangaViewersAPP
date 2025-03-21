@@ -17,3 +17,5 @@ struct Series: Codable, Identifiable {
     let name: String
     let booksCount: Int
 }
+
+// Hello Djibril ! :)
