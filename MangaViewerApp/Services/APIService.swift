@@ -21,8 +21,8 @@ class APIService: ObservableObject {
     var activeBaseURL: String
     private var isUsingFallback = false
     
-    private let username = "djibril.m21@gmail.com"
-    private let password = "djibril21"
+    private let username = "maxmiramora@gmail.com"
+    private let password = "max123"
     
     // Default timeout interval for requests
     private let timeoutInterval: TimeInterval = 10.0

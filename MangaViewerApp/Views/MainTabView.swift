@@ -3,7 +3,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab = 0
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             // Onglet Home - Votre ContentView existante
@@ -12,23 +12,23 @@ struct MainTabView: View {
                     Label("Accueil", systemImage: "house")
                 }
                 .tag(0)
-            
+
             // Onglet Recherche
             SearchView()
                 .tabItem {
                     Label("Recherche", systemImage: "magnifyingglass")
                 }
                 .tag(1)
-            
+
             // Onglet Favoris
             Text("Favoris - À implémenter")
                 .tabItem {
                     Label("Favoris", systemImage: "heart")
                 }
                 .tag(2)
-            
-            // Onglet Profil
-            Text("Profil - À implémenter")
+
+            // Onglet Profil - maintenant avec la vraie vue
+            ProfileView()
                 .tabItem {
                     Label("Profil", systemImage: "person")
                 }
@@ -37,3 +37,10 @@ struct MainTabView: View {
         .accentColor(.blue) // La couleur des icônes sélectionnées
     }
 }
+
+struct MainTabView_Previews: PreviewProvider {
+    static var previews: some View {
+        MainTabView()
+    }
+}
+
