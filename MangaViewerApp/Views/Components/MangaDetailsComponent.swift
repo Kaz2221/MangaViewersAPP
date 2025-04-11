@@ -6,9 +6,7 @@ struct JikanMangaDetailsSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // En-tête avec image et informations principales
             HStack(alignment: .top, spacing: 16) {
-                // Image
                 AsyncImage(url: URL(string: manga.images.jpg.largeImageUrl ?? manga.images.jpg.imageUrl)) { image in
                     image
                         .resizable()
@@ -20,7 +18,6 @@ struct JikanMangaDetailsSection: View {
                 .frame(width: 130, height: 200)
                 .cornerRadius(8)
                 
-                // Informations principales
                 VStack(alignment: .leading, spacing: 8) {
                     Text(manga.title)
                         .font(.title3)
@@ -56,7 +53,6 @@ struct JikanMangaDetailsSection: View {
             }
             .padding(.bottom, 8)
             
-            // Informations générales
             Group {
                 Text("Informations")
                     .font(.headline)
@@ -75,7 +71,6 @@ struct JikanMangaDetailsSection: View {
                 }
             }
             
-            // Synopsis
             if let synopsis = manga.synopsis, !synopsis.isEmpty {
                 Group {
                     Text("Synopsis")
@@ -98,9 +93,7 @@ struct LocalMangaDetailsSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // En-tête avec image et informations principales
             HStack(alignment: .top, spacing: 16) {
-                // Image
                 if let image = coverImage {
                     Image(uiImage: image)
                         .resizable()
@@ -117,7 +110,6 @@ struct LocalMangaDetailsSection: View {
                         }
                 }
                 
-                // Informations locales
                 VStack(alignment: .leading, spacing: 8) {
                     Text(series.name)
                         .font(.title3)
@@ -126,8 +118,6 @@ struct LocalMangaDetailsSection: View {
                     Text("\(series.booksCount) volumes disponibles")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    
-                    // Vous pouvez ajouter d'autres informations locales ici
                 }
             }
             
@@ -149,11 +139,12 @@ struct LocalMangaDetailsSection: View {
     }
 }
 
-// Section pour la liste des chapitres
+// ✅ Section pour la liste des chapitres – MODIFIÉE
 struct ChapterListSection: View {
     let series: Series
+    let apiService: APIService // ← Ajouté
     @State private var books: [Book] = []
-    
+
     var body: some View {
         VStack {
             if books.isEmpty {
@@ -187,16 +178,24 @@ struct ChapterListSection: View {
             }
         }
         .onAppear {
+            print("ChapterListSection: View appeared for series: \(series.name)")
+            print("ChapterListSection: Series details - ID: \(series.id), libraryId: \(series.libraryId), booksCount: \(series.booksCount)")
             fetchBooks()
         }
     }
-    
+
     private func fetchBooks() {
-        APIService().fetchBooks(for: series.id) { fetchedBooks in
+        print("ChapterListSection: Fetching books for series: \(series.name), ID: \(series.id)")
+        
+        apiService.fetchBooks(for: series.id) { fetchedBooks in
             if let fetchedBooks = fetchedBooks {
+                print("ChapterListSection: Received \(fetchedBooks.count) books from API")
                 DispatchQueue.main.async {
                     self.books = fetchedBooks
+                    print("ChapterListSection: Updated books array, now has \(self.books.count) books")
                 }
+            } else {
+                print("ChapterListSection: Received nil books from API for series ID: \(series.id)")
             }
         }
     }
@@ -221,3 +220,4 @@ struct DetailRow: View {
         .padding(.vertical, 2)
     }
 }
+

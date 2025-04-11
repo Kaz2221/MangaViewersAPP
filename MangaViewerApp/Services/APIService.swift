@@ -1,4 +1,3 @@
-//
 //  APIService.swift
 //  MangaViewerApp
 //
@@ -8,7 +7,10 @@ import UIKit
 import Foundation
 import Combine
 
+
+
 class APIService: ObservableObject {
+    
     // Primary and fallback server URLs
     private let localBaseURL = "http://localhost:25600/api/v1"
     private let remoteBaseURL = "https://your-remote-api.com/api/v1" // Replace with your actual remote API if available
@@ -35,11 +37,14 @@ class APIService: ObservableObject {
     
     // MARK: - Initialization
     
+    let instanceId = UUID().uuidString
+
     init() {
         self.activeBaseURL = localBaseURL
+        print("APIService instance created: \(instanceId)")
         checkServerAvailability()
     }
-    
+
     // MARK: - Server Availability
     
     func checkServerAvailability() {
@@ -397,16 +402,22 @@ class APIService: ObservableObject {
     }
 
     func fetchBooks(for seriesId: String, completion: @escaping ([Book]?) -> Void) {
-        // For mock series, return mock books
+        print("APIService: Starting fetchBooks for seriesId: \(seriesId)")
+        
         if seriesId.starts(with: "mock") {
+            print("APIService: Using mock data for series ID: \(seriesId)")
             DispatchQueue.main.async {
-                completion(self.getMockBooks(for: seriesId))
+                let mockBooks = self.getMockBooks(for: seriesId)
+                completion(mockBooks)
             }
             return
         }
         
-        guard let url = URL(string: "\(activeBaseURL)/series/\(seriesId)/books") else {
-            print("Invalid URL for fetching books")
+        let urlString = "\(activeBaseURL)/series/\(seriesId)/books"
+        print("APIService: Attempting to fetch from URL: \(urlString)")
+        
+        guard let url = URL(string: urlString) else {
+            print("APIService: Invalid URL for fetching books: \(urlString)")
             DispatchQueue.main.async {
                 completion(self.getMockBooks(for: seriesId))
             }
@@ -416,13 +427,20 @@ class APIService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = timeoutInterval
+        request.timeoutInterval = 30.0
 
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            print("APIService: dataTask started")
+            print("APIService: data: \(data != nil), error: \(error?.localizedDescription ?? "none")")
+            
             guard let self = self else { return }
             
+            if let httpResponse = response as? HTTPURLResponse {
+                print("APIService: HTTP Status Code for books: \(httpResponse.statusCode)")
+            }
+            
             if let error = error {
-                print("Books fetch error: \(error.localizedDescription)")
+                print("APIService: Books fetch error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(self.getMockBooks(for: seriesId))
                 }
@@ -430,34 +448,52 @@ class APIService: ObservableObject {
             }
 
             guard let data = data else {
-                print("No book data received")
+                print("APIService: No book data received")
                 DispatchQueue.main.async {
                     completion(self.getMockBooks(for: seriesId))
                 }
                 return
             }
-
+            
+            print("APIService: Successfully received data for books, size: \(data.count) bytes")
+            if let responseString = String(data: data, encoding: .utf8)?.prefix(200) {
+                print("APIService: Response preview: \(responseString)")
+            }
+            print("👣 On est juste avant le bloc DO")
+            // Attempt BookResponse decoding
             do {
+                print("🔍 Tentative de décodage BookResponse…")
                 let response = try JSONDecoder().decode(BookResponse.self, from: data)
+                print("✅ Décodage terminé, on arrive ici.")
+                print("APIService: Successfully decoded BookResponse with \(response.content.count) books")
                 DispatchQueue.main.async {
                     completion(response.content)
                 }
             } catch {
-                print("Book decoding error: \(error)")
-                
-                // Try direct array decoding as fallback
+                print("BookResponse decoding failed!")
+                print("Erreur de décodeur:", error.localizedDescription)
+
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("JSON brut reçu :")
+                    print(jsonString)
+                }
+
                 do {
                     let books = try JSONDecoder().decode([Book].self, from: data)
+                    print("APIService: Successfully decoded direct array with \(books.count) books")
                     DispatchQueue.main.async {
                         completion(books)
                     }
                 } catch {
-                    print("Alternative book decoding also failed: \(error)")
+                    print("Échec aussi du décodage en tableau direct: \(error.localizedDescription)")
                     DispatchQueue.main.async {
                         completion(self.getMockBooks(for: seriesId))
                     }
                 }
             }
-        }.resume()
+        }
+
+        print("APIService: Starting network request for books")
+        task.resume()
     }
 }

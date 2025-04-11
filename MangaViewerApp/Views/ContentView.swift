@@ -1,21 +1,19 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var apiService = APIService() // Utiliser StateObject au lieu de créer une nouvelle instance
+    @StateObject private var apiService = APIService()
     @State private var seriesList: [Series] = []
-    @State private var coverImages: [String: UIImage] = [:] // Cache pour les couvertures
+    @State private var coverImages: [String: UIImage] = [:]
     @State private var isLoading = true
 
     var body: some View {
         NavigationView {
             VStack {
-                // Indicateur de chargement
                 if isLoading {
                     Spacer()
                     ProgressView("Chargement des séries...")
                     Spacer()
                 } else if seriesList.isEmpty {
-                    // Message si aucune série n'est trouvée
                     Spacer()
                     VStack {
                         Image(systemName: "books.vertical")
@@ -40,14 +38,11 @@ struct ContentView: View {
                     }
                     Spacer()
                 } else {
-                    // Affichage des séries de manga
                     ScrollView {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)], spacing: 20) {
                             ForEach(seriesList) { series in
-                                // Navigation vers MangaDetailView
-                                NavigationLink(destination: MangaDetailView(series: series)) {
+                                NavigationLink(destination: MangaDetailView(series: series, apiService: apiService)) { // ← ici on passe l’API
                                     VStack {
-                                        // Image de couverture
                                         if let image = coverImages[series.id] {
                                             Image(uiImage: image)
                                                 .resizable()
@@ -55,7 +50,6 @@ struct ContentView: View {
                                                 .frame(width: 120, height: 180)
                                                 .cornerRadius(8)
                                         } else {
-                                            // Placeholder pendant le chargement
                                             Rectangle()
                                                 .fill(Color.gray.opacity(0.3))
                                                 .frame(width: 120, height: 180)
@@ -69,14 +63,12 @@ struct ContentView: View {
                                                 }
                                         }
 
-                                        // Titre de la série
                                         Text(series.name)
                                             .font(.headline)
                                             .multilineTextAlignment(.center)
                                             .frame(maxWidth: 120)
                                             .padding(.top, 5)
 
-                                        // Nombre de volumes
                                         Text("\(series.booksCount) volumes")
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
@@ -93,7 +85,6 @@ struct ContentView: View {
                         .padding()
                     }
                     .refreshable {
-                        // Support du Pull-to-refresh
                         fetchData()
                     }
                 }
@@ -111,20 +102,15 @@ struct ContentView: View {
         isLoading = true
         print("Début fetchData()")
         
-        // Utiliser l'instance apiService existante au lieu d'en créer une nouvelle
         apiService.fetchSeries { series in
             print("Callback fetchSeries appelé")
             DispatchQueue.main.async {
                 isLoading = false
-                
                 if let series = series {
                     print("Séries reçues : \(series.count)")
                     self.seriesList = series
                 } else {
                     print("API request failed!")
-                    
-                    // Données de test en cas d'échec
-                    print("Ajout de données de test")
                     self.seriesList = [
                         Series(id: "test1", libraryId: "lib1", name: "One Piece", booksCount: 10),
                         Series(id: "test2", libraryId: "lib1", name: "Naruto", booksCount: 8),
@@ -137,10 +123,8 @@ struct ContentView: View {
     }
 
     private func fetchCover(for series: Series) {
-        // Éviter de charger plusieurs fois la même image
         guard coverImages[series.id] == nil else { return }
         
-        // Utiliser l'instance apiService existante
         apiService.fetchSeriesCover(seriesId: series.id) { image in
             if let image = image {
                 DispatchQueue.main.async {
@@ -151,9 +135,9 @@ struct ContentView: View {
     }
 }
 
-// Prévisualisation SwiftUI
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
     }
 }
+

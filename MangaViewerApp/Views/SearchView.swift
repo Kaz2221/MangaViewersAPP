@@ -6,10 +6,7 @@ struct SearchView: View {
     @State private var searchText = ""
     @State private var selectedGenres: Set<String> = []
     
-    // Genres populaires de manga
-    // Utilisons les genres de l'API au lieu d'une liste codée en dur
     var genres: [String] {
-        // Si aucun genre n'est disponible, utiliser une liste par défaut
         if viewModel.availableGenres.isEmpty {
             return [
                 "Action", "Adventure", "Comedy", "Drama", "Fantasy",
@@ -49,7 +46,7 @@ struct SearchView: View {
                 .padding(.horizontal)
                 .padding(.top)
                 
-                // Filtres par genre (scrollable horizontalement)
+                // Filtres par genre
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(genres, id: \.self) { genre in
@@ -71,7 +68,6 @@ struct SearchView: View {
                     .padding(.vertical, 10)
                 }
                 
-                // Indicateur des filtres actifs
                 if !selectedGenres.isEmpty {
                     HStack {
                         Text("Filtres actifs:")
@@ -147,7 +143,12 @@ struct SearchView: View {
                 } else {
                     List {
                         ForEach(viewModel.results) { manga in
-                            NavigationLink(destination: MangaDetailView(series: Series(id: manga.id, libraryId: "", name: manga.title, booksCount: 0))) {
+                            NavigationLink(destination:
+                                MangaDetailView(
+                                    series: Series(id: manga.id, libraryId: "", name: manga.title, booksCount: 0),
+                                    apiService: apiService // ← CORRECTION ICI
+                                )
+                            ) {
                                 SearchResultRow(manga: manga)
                             }
                         }
@@ -157,14 +158,14 @@ struct SearchView: View {
             }
             .navigationTitle("Recherche")
             .onAppear {
-                // Chargement initial des mangas populaires
                 viewModel.loadPopularManga()
             }
         }
     }
 }
 
-// Bouton de genre
+// Composants auxiliaires
+
 struct GenreButton: View {
     let genre: String
     let isSelected: Bool
@@ -186,7 +187,6 @@ struct GenreButton: View {
     }
 }
 
-// Ligne de résultat de recherche
 struct SearchResultRow: View {
     let manga: MangaSearchResult
     @State private var coverImage: UIImage?
@@ -194,7 +194,6 @@ struct SearchResultRow: View {
     
     var body: some View {
         HStack(spacing: 15) {
-            // Image de couverture
             if let image = coverImage {
                 Image(uiImage: image)
                     .resizable()
@@ -216,7 +215,6 @@ struct SearchResultRow: View {
                     }
             }
             
-            // Informations du manga
             VStack(alignment: .leading, spacing: 4) {
                 Text(manga.title)
                     .font(.headline)
@@ -229,15 +227,13 @@ struct SearchResultRow: View {
                         .lineLimit(1)
                 }
                 
-                HStack(spacing: 15) {
-                    if let status = manga.status {
-                        Text(status)
-                            .font(.caption)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.blue.opacity(0.2))
-                            .cornerRadius(4)
-                    }
+                if let status = manga.status {
+                    Text(status)
+                        .font(.caption)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.2))
+                        .cornerRadius(4)
                 }
                 
                 if let genres = manga.genres, !genres.isEmpty {
@@ -253,9 +249,7 @@ struct SearchResultRow: View {
         .padding(.vertical, 8)
     }
     
-    // Fonction pour charger l'image de couverture
     private func loadCoverImage() {
-        // Utiliser directement l'API pour charger l'image
         apiService.fetchSeriesCover(seriesId: manga.id) { image in
             if let image = image {
                 DispatchQueue.main.async {
@@ -266,223 +260,10 @@ struct SearchResultRow: View {
     }
 }
 
-// Écran de détails du manga sélectionné
-struct MangaDetailsView: View {
-    let manga: MangaSearchResult
-    
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Entête avec image et informations de base
-                HStack(alignment: .top, spacing: 16) {
-                    // Image de couverture
-                    if let imageUrl = manga.imageUrl {
-                        AsyncImage(url: URL(string: imageUrl)) { phase in
-                            switch phase {
-                            case .empty:
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 130, height: 200)
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 130, height: 200)
-                                    .clipped()
-                            case .failure:
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 130, height: 200)
-                                    .overlay(
-                                        Image(systemName: "exclamationmark.triangle")
-                                            .foregroundColor(.gray)
-                                    )
-                            @unknown default:
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 130, height: 200)
-                            }
-                        }
-                        .cornerRadius(8)
-                    } else {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: 130, height: 200)
-                            .cornerRadius(8)
-                    }
-                    
-                    // Informations principales
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(manga.title)
-                            .font(.title3)
-                            .fontWeight(.bold)
-                        
-                        if let author = manga.author, !author.isEmpty {
-                            Text("Par \(author)")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        if let score = manga.score {
-                            HStack {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                                Text(String(format: "%.1f", score))
-                                    .fontWeight(.medium)
-                            }
-                        }
-                        
-                        if let status = manga.status {
-                            Text(status)
-                                .font(.subheadline)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(
-                                    status == "En cours" ? Color.green.opacity(0.2) :
-                                    status == "Terminé" ? Color.orange.opacity(0.2) :
-                                    Color.gray.opacity(0.2)
-                                )
-                                .cornerRadius(4)
-                        }
-                    }
-                }
-                
-                // Section Synopsis
-                if let synopsis = manga.synopsis, !synopsis.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Synopsis")
-                            .font(.headline)
-                        
-                        Text(synopsis)
-                            .font(.body)
-                            .lineSpacing(4)
-                    }
-                }
-                
-                // Section Genres
-                if let genres = manga.genres, !genres.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Genres")
-                            .font(.headline)
-                        
-                        FlowLayout(spacing: 8) {
-                            ForEach(genres, id: \.self) { genre in
-                                Text(genre)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.blue.opacity(0.1))
-                                    .cornerRadius(12)
-                            }
-                        }
-                    }
-                }
-                
-                // Autres informations
-                if let published = manga.publishedDate {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Informations")
-                            .font(.headline)
-                        
-                        HStack {
-                            Text("Publié:")
-                                .fontWeight(.medium)
-                            Text(published)
-                        }
-                        .font(.subheadline)
-                    }
-                }
-                
-                // Bouton d'action principal
-                Button(action: {
-                    // Action pour lire ou accéder au manga
-                }) {
-                    Text("Lire ce manga")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .padding(.top, 10)
-            }
-            .padding()
-        }
-        .navigationTitle("Détails")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// Mise en page en flux (comme des tags qui s'adaptent à la largeur)
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-    
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let containerWidth = proposal.width ?? 0
-        var height: CGFloat = 0
-        let rows = computeRows(containerWidth: containerWidth, subviews: subviews)
-        
-        for row in rows {
-            if let maxHeight = row.map({ subviews[$0].sizeThatFits(.unspecified).height }).max() {
-                height += maxHeight + spacing
-            }
-        }
-        
-        return CGSize(width: containerWidth, height: max(0, height - spacing))
-    }
-    
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let rows = computeRows(containerWidth: bounds.width, subviews: subviews)
-        
-        var y = bounds.minY
-        
-        for row in rows {
-            let rowHeight = row.map { subviews[$0].sizeThatFits(.unspecified).height }.max() ?? 0
-            var x = bounds.minX
-            
-            for index in row {
-                let subview = subviews[index]
-                let subviewSize = subview.sizeThatFits(.unspecified)
-                
-                subview.place(
-                    at: CGPoint(x: x, y: y),
-                    proposal: ProposedViewSize(width: subviewSize.width, height: rowHeight)
-                )
-                
-                x += subviewSize.width + spacing
-            }
-            
-            y += rowHeight + spacing
-        }
-    }
-    
-    private func computeRows(containerWidth: CGFloat, subviews: Subviews) -> [[Int]] {
-        var rows: [[Int]] = [[]]
-        var currentRow = 0
-        var remainingWidth = containerWidth
-        
-        for index in subviews.indices {
-            let subviewSize = subviews[index].sizeThatFits(.unspecified)
-            
-            if subviewSize.width > remainingWidth {
-                // Start new row
-                currentRow += 1
-                rows.append([])
-                remainingWidth = containerWidth
-            }
-            
-            rows[currentRow].append(index)
-            remainingWidth -= subviewSize.width + spacing
-        }
-        
-        return rows
-    }
-}
-
-// Aperçu pour SwiftUI
+// Aperçu
 struct SearchView_Previews: PreviewProvider {
     static var previews: some View {
         SearchView()
     }
 }
+

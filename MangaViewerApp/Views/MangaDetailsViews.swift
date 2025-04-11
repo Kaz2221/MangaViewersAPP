@@ -3,6 +3,8 @@ import Combine
 
 struct MangaDetailView: View {
     let series: Series
+    let apiService: APIService // ← Ajout ici
+
     @StateObject private var viewModel = MangaDetailViewModel()
     
     var body: some View {
@@ -31,10 +33,8 @@ struct MangaDetailView: View {
                         .cornerRadius(8)
                     }
                 } else if let manga = viewModel.mangaDetails {
-                    // Affichage des détails du manga via Jikan
                     JikanMangaDetailsSection(manga: manga)
                 } else {
-                    // Message s'il n'y a pas d'informations disponibles
                     Text("Recherche d'informations en ligne...")
                         .foregroundColor(.secondary)
                         .padding()
@@ -50,7 +50,7 @@ struct MangaDetailView: View {
                         .fontWeight(.bold)
                         .padding(.bottom, 8)
                     
-                    ChapterListSection(series: series)
+                    ChapterListSection(series: series, apiService: apiService) // ← Passage de l'instance
                 }
             }
             .padding()
@@ -58,8 +58,8 @@ struct MangaDetailView: View {
         .navigationTitle(series.name)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            // Rechercher automatiquement les informations en ligne
             viewModel.searchByTitle(title: series.name)
         }
     }
 }
+
