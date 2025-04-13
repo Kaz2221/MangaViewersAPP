@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @StateObject private var authService = AuthenticationService()
     @State private var selectedTab = 0
 
     var body: some View {
@@ -20,8 +21,8 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            // Onglet Favoris
-            Text("Favoris - À implémenter")
+            // Onglet Favoris - now using real FavoritesView
+            FavoritesView(authService: authService)
                 .tabItem {
                     Label("Favoris", systemImage: "heart")
                 }
@@ -43,4 +44,3 @@ struct MainTabView_Previews: PreviewProvider {
         MainTabView()
     }
 }
-
