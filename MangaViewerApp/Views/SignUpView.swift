@@ -96,6 +96,7 @@ struct SignUpView: View {
                                             try Auth.auth().signOut()
                                             print("Déconnexion après création du compte")
                                             presentationMode.wrappedValue.dismiss()
+
                                         } catch {
                                             print("Erreur lors de la déconnexion : \(error.localizedDescription)")
                                         }

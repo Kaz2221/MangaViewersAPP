@@ -146,7 +146,7 @@ struct SearchView: View {
                             NavigationLink(destination:
                                 MangaDetailView(
                                     series: Series(id: manga.id, libraryId: "", name: manga.title, booksCount: 0),
-                                    apiService: apiService // ← CORRECTION ICI
+                                    apiService: apiService
                                 )
                             ) {
                                 SearchResultRow(manga: manga)
@@ -157,6 +157,7 @@ struct SearchView: View {
                 }
             }
             .navigationTitle("Recherche")
+            .showTabBar(true) // Replace with our custom environment modifier
             .onAppear {
                 viewModel.loadPopularManga()
             }
@@ -266,4 +267,3 @@ struct SearchView_Previews: PreviewProvider {
         SearchView()
     }
 }
-

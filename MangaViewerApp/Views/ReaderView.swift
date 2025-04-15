@@ -6,6 +6,7 @@ struct ReaderView: View {
     @State private var pageImage: UIImage?
     @State private var isLoading = false
     @GestureState private var dragOffset: CGFloat = 0
+    @State private var isTabBarHidden = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -110,10 +111,16 @@ struct ReaderView: View {
                 Image(systemName: "gear")
             }
         )
+        .toolbar(isTabBarHidden ? .hidden : .visible, for: .tabBar)
         .onAppear {
             loadPage()
+            isTabBarHidden = true
+        }
+        .onDisappear {
+            isTabBarHidden = false
         }
         .statusBar(hidden: true) // Cache la barre d'état pour une meilleure immersion
+        .showTabBar(false) // Hide the tab bar in the reader view
     }
     
     private func loadPage() {

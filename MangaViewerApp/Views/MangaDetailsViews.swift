@@ -4,11 +4,12 @@ import FirebaseAuth
 
 struct MangaDetailView: View {
     let series: Series
-    let apiService: APIService // ← Ajout ici
+    let apiService: APIService
 
     @StateObject private var viewModel = MangaDetailViewModel()
     @StateObject private var favoritesService = FavoritesService()
     @ObservedObject var authService = AuthenticationService()
+    @State private var isTabBarHidden = false
     
     var body: some View {
         ScrollView {
@@ -53,7 +54,7 @@ struct MangaDetailView: View {
                         .fontWeight(.bold)
                         .padding(.bottom, 8)
                     
-                    ChapterListSection(series: series, apiService: apiService) // ← Passage de l'instance
+                    ChapterListSection(series: series, apiService: apiService)
                 }
             }
             .padding()
@@ -72,14 +73,19 @@ struct MangaDetailView: View {
                 }
             }
         )
+        .toolbar(isTabBarHidden ? .hidden : .visible, for: .tabBar)
         .onAppear {
             viewModel.searchByTitle(title: series.name)
             
-            // Initialize favorites when view appears
             if authService.isAuthenticated, let userId = Auth.auth().currentUser?.uid {
                 favoritesService.startListening(forUserId: userId)
             }
+            isTabBarHidden = true
         }
+        .onDisappear{
+            isTabBarHidden = false
+        }
+            
     }
     
     private func toggleFavorite() {
@@ -88,14 +94,12 @@ struct MangaDetailView: View {
         }
         
         if favoritesService.isFavorite(seriesId: series.id) {
-            // Remove from favorites
             favoritesService.removeFavorite(seriesId: series.id) { error in
                 if let error = error {
                     print("Error removing favorite: \(error.localizedDescription)")
                 }
             }
         } else {
-            // Add to favorites
             favoritesService.addFavorite(series: series, userId: userId) { error in
                 if let error = error {
                     print("Error adding favorite: \(error.localizedDescription)")

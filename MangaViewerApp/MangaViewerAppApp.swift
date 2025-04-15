@@ -10,6 +10,8 @@ import Firebase
 
 @main
 struct MangaViewerAppApp: App {
+    
+    
     init() {
         FirebaseApp.configure()
     }
@@ -17,6 +19,8 @@ struct MangaViewerAppApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView() // Pour test uniquement
+                .showTabBar(true)
         }
     }
 }
+

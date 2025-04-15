@@ -41,7 +41,7 @@ struct ContentView: View {
                     ScrollView {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)], spacing: 20) {
                             ForEach(seriesList) { series in
-                                NavigationLink(destination: MangaDetailView(series: series, apiService: apiService)) { // ← ici on passe l’API
+                                NavigationLink(destination: MangaDetailView(series: series, apiService: apiService)) {
                                     VStack {
                                         if let image = coverImages[series.id] {
                                             Image(uiImage: image)
@@ -90,6 +90,7 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Manga Series")
+            .toolbar(.visible, for: .tabBar)
             .onAppear {
                 if seriesList.isEmpty {
                     fetchData()
@@ -140,4 +141,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
